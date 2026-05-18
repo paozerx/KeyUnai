@@ -68,7 +68,11 @@ export default function OrdersPage() {
   }, [router]);
 
   if (isLoading) {
-    return <div className="min-h-[60vh] flex justify-center items-center text-white">กำลังโหลดข้อมูล...</div>;
+    return (
+      <div className="min-h-[60vh] flex justify-center items-center">
+        <div className="h-8 w-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   if (error) {
@@ -76,23 +80,26 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="flex items-center space-x-3 mb-8">
-        <Package className="w-8 h-8 text-blue-500" />
-        <h1 className="text-3xl font-bold text-white">ประวัติการสั่งซื้อของฉัน</h1>
+    <div className="page-shell sm:px-6 lg:px-8 sm:py-12 max-w-5xl">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-2 rounded-lg bg-blue-500/10">
+          <Package className="w-7 h-7 text-blue-400" />
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold gradient-heading">ประวัติการสั่งซื้อของฉัน</h1>
       </div>
 
       {orders.length === 0 ? (
-        <div className="bg-slate-800 rounded-xl p-10 text-center border border-slate-700">
-          <p className="text-gray-400 text-lg mb-6">คุณยังไม่เคยสั่งซื้อเกมใดๆ เลย</p>
-          <Link href="/" className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition">
+        <div className="empty-state sm:p-16">
+          <p className="text-slate-300 text-lg font-medium mb-2">ยังไม่มีคำสั่งซื้อ</p>
+          <p className="text-slate-500 mb-8">เริ่มเลือกซื้อเกมแรกของคุณได้เลย</p>
+          <Link href="/" className="btn-primary inline-flex items-center py-3 px-6">
             ไปเลือกซื้อเกมกันเลย <ArrowRight className="ml-2 w-5 h-5" />
           </Link>
         </div>
       ) : (
         <div className="space-y-6">
           {orders.map((order) => (
-            <div key={order.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+            <div key={order.id} className="glass-card overflow-hidden shadow-lg shadow-black/10">
               
               {/* ส่วนหัวของบิล (Order Header) */}
               <div className="bg-slate-800/50 p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

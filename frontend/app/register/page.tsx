@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Mail, KeyRound, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const login = useAuthStore((state) => state.login);
   
   // State สำหรับฟอร์ม
   const [username, setUsername] = useState('');
@@ -58,12 +60,22 @@ export default function RegisterPage() {
         throw new Error(errorMessage as string);
       }
 
-      // 4. ถ้าสำเร็จ แสดงข้อความและเด้งไปหน้า Login
-      setSuccess('สมัครสมาชิกสำเร็จ! กำลังพาดุณไปยังหน้าเข้าสู่ระบบ...');
-      
-      setTimeout(() => {
+      const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/login/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const loginData = await loginRes.json();
+
+      if (!loginRes.ok) {
+        setSuccess('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ');
         router.push('/login');
-      }, 2000); // หน่วงเวลา 2 วินาทีให้ผู้ใช้อ่านข้อความสำเร็จก่อน
+        return;
+      }
+
+      login(loginData.access, loginData.refresh);
+      router.push('/');
 
     } catch (err: any) {
       setError(err.message);
@@ -74,11 +86,10 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-8">
-        
+      <div className="max-w-md w-full glass-card p-8 shadow-2xl shadow-black/20">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-white mb-2">Create Account</h2>
-          <p className="text-gray-400">สมัครสมาชิกเพื่อเข้าร่วม KeyUnai</p>
+          <h2 className="text-3xl font-extrabold gradient-heading mb-2">Create Account</h2>
+          <p className="text-slate-400">สมัครสมาชิกเพื่อเข้าร่วม KeyUnai</p>
         </div>
 
         {/* กล่องแจ้งเตือน Error */}
@@ -174,7 +185,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isLoading || !!success}
-            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
+            className={`w-full flex justify-center py-3 px-4 text-sm font-bold btn-primary ${
               (isLoading || success) ? 'opacity-70 cursor-not-allowed' : ''
             }`}
           >

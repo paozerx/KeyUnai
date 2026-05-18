@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { KeyRound, Mail, AlertCircle } from 'lucide-react';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginPage() {
   const router = useRouter();
+  const login = useAuthStore((state) => state.login);
   
   // สร้าง State เก็บข้อมูลที่พิมพ์ในฟอร์ม
   const [username, setUsername] = useState('');
@@ -38,12 +40,8 @@ export default function LoginPage() {
 
       // ถ้าล็อกอินสำเร็จ ระบบจะได้ Token กลับมา
       // เราจะเก็บมันไว้ใน localStorage ของเบราว์เซอร์
-      localStorage.setItem('accessToken', data.access);
-      localStorage.setItem('refreshToken', data.refresh);
-
-      // เด้งกลับไปหน้าแรก
+      login(data.access, data.refresh);
       router.push('/');
-      router.refresh(); // บังคับรีเฟรชหน้าเพื่อให้ Navbar อัปเดต (ถ้ามีการต่อโค้ดเช็กสถานะภายหลัง)
 
     } catch (err: any) {
       setError(err.message);
@@ -53,12 +51,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-8">
-        
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      <div className="max-w-md w-full glass-card p-8 shadow-2xl shadow-black/20">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-white mb-2">Welcome Back</h2>
-          <p className="text-gray-400">เข้าสู่ระบบเพื่อซื้อคีย์เกม</p>
+          <h2 className="text-3xl font-extrabold gradient-heading mb-2">Welcome Back</h2>
+          <p className="text-slate-400">เข้าสู่ระบบเพื่อซื้อคีย์เกม</p>
         </div>
 
         {/* แสดงกล่อง Error สีแดงถ้ารหัสผิด */}
@@ -110,7 +107,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-900 transition ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            className={`w-full flex justify-center py-3 px-4 text-sm font-bold btn-primary ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {isLoading ? 'กำลังเข้าสู่ระบบ...' : 'Sign In'}
           </button>

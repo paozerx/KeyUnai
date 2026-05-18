@@ -77,17 +77,14 @@ export default function CartPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-bold text-white mb-8">ตะกร้าสินค้าของคุณ</h1>
+    <div className="page-shell sm:px-6 lg:px-8 sm:py-12">
+      <h1 className="text-3xl sm:text-4xl font-extrabold gradient-heading mb-8">ตะกร้าสินค้าของคุณ</h1>
 
       {items.length === 0 ? (
-        // กรณีตะกร้าว่างเปล่า
-        <div className="bg-slate-800 rounded-xl p-10 text-center border border-slate-700">
-          <p className="text-gray-400 text-lg mb-6">ยังไม่มีเกมในตะกร้าเลย ลองไปหาเกมที่ถูกใจดูสิ!</p>
-          <Link 
-            href="/" 
-            className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition"
-          >
+        <div className="empty-state sm:p-16">
+          <p className="text-slate-300 text-lg font-medium mb-2">ยังไม่มีเกมในตะกร้า</p>
+          <p className="text-slate-500 mb-8">ลองไปหาเกมที่ถูกใจในหน้าร้านค้าดูสิ</p>
+          <Link href="/" className="btn-primary inline-flex items-center py-3 px-6">
             กลับไปหน้าร้านค้า <ArrowRight className="ml-2 w-5 h-5" />
           </Link>
         </div>
@@ -98,7 +95,7 @@ export default function CartPage() {
           {/* รายการสินค้าฝั่งซ้าย */}
           <div className="lg:col-span-2 space-y-4">
             {items.map((item) => (
-              <div key={item.id} className="bg-slate-800 rounded-xl p-4 border border-slate-700 flex items-center justify-between">
+              <div key={item.id} className="glass-card p-4 flex items-center justify-between hover:border-slate-600/60 transition-colors">
                 <div className="flex items-center space-x-4">
                   {/* รูปปกเกมไซส์มินิ */}
                   <div className="w-16 h-24 bg-slate-900 rounded overflow-hidden flex-shrink-0">
@@ -132,7 +129,7 @@ export default function CartPage() {
           </div>
 
           {/* สรุปยอดสั่งซื้อฝั่งขวา */}
-          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 h-fit sticky top-24">
+          <div className="glass-card p-6 h-fit sticky top-24 shadow-xl shadow-black/10">
             <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-700 pb-4">สรุปคำสั่งซื้อ</h2>
             
             <div className="flex justify-between text-gray-300 mb-4">
@@ -146,14 +143,14 @@ export default function CartPage() {
             </div>
 
             {/* ปุ่มชำระเงินที่ผูกฟังก์ชันแล้ว */}
-            <button 
+            <button
               onClick={handleCheckout}
               disabled={isCheckingOut}
-              className={`w-full text-white font-bold py-3 px-4 rounded-lg transition shadow-lg 
-                ${isCheckingOut 
-                  ? 'bg-blue-800 cursor-not-allowed opacity-70' 
-                  : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`
-              }
+              className={`w-full py-3 px-4 font-bold ${
+                isCheckingOut
+                  ? 'bg-blue-800 cursor-not-allowed opacity-70 text-white rounded-lg'
+                  : 'btn-primary w-full'
+              }`}
             >
               {isCheckingOut ? 'กำลังดำเนินการ...' : 'ดำเนินการชำระเงิน'}
             </button>
