@@ -4,22 +4,77 @@ import { useCartStore } from '@/store/cartStore';
 import Link from 'next/link';
 import { Trash2, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
   const { items, removeItem, clearCart } = useCartStore();
   const [isMounted, setIsMounted] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const router = useRouter();
 
   // แก้ปัญหา Hydration เพื่อรอให้ Client โหลดข้อมูลตะกร้าเสร็จก่อน
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  if (!isMounted) return null; // หรือใส่ loading spinner ตรงนี้ก็ได้
+  if (!isMounted) return null;
 
   // คำนวณราคารวมทั้งหมด
   const totalPrice = items.reduce((total, item) => {
     return total + (parseFloat(item.price) * item.quantity);
   }, 0);
+
+  // ฟังก์ชันสั่งซื้อสินค้า
+  const handleCheckout = async () => {
+    // กรองเอาเฉพาะข้อมูลที่ Backend ต้องการ
+    const orderItems = items.map(item => ({
+      game_id: item.id,
+      quantity: item.quantity
+    }));
+
+    // ดึงกุญแจ Login ออกมา
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert("กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อครับ!");
+      router.push('/login');
+      return;
+    }
+
+    setIsCheckingOut(true);
+
+    try {
+      // ส่งข้อมูลไปหา Django
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/create/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ items: orderItems })
+      });
+
+      if (!res.ok) {
+        // เช็กเผื่อ Token หมดอายุ
+        if (res.status === 401) {
+          localStorage.removeItem('accessToken');
+          alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+          router.push('/login');
+          return;
+        }
+        throw new Error('เกิดข้อผิดพลาดในการสั่งซื้อ');
+      }
+
+      // ถ้าสำเร็จ
+      alert("🎉 สร้างคำสั่งซื้อสำเร็จเรียบร้อยแล้ว!");
+      clearCart(); // ล้างตะกร้า
+      router.push('/'); // กลับหน้าแรก (อนาคตค่อยพาไปหน้าประวัติการสั่งซื้อ)
+
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -90,13 +145,23 @@ export default function CartPage() {
               <span className="text-emerald-400">฿{totalPrice.toLocaleString()}</span>
             </div>
 
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg shadow-blue-500/20">
-              ดำเนินการชำระเงิน
+            {/* ปุ่มชำระเงินที่ผูกฟังก์ชันแล้ว */}
+            <button 
+              onClick={handleCheckout}
+              disabled={isCheckingOut}
+              className={`w-full text-white font-bold py-3 px-4 rounded-lg transition shadow-lg 
+                ${isCheckingOut 
+                  ? 'bg-blue-800 cursor-not-allowed opacity-70' 
+                  : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`
+              }
+            >
+              {isCheckingOut ? 'กำลังดำเนินการ...' : 'ดำเนินการชำระเงิน'}
             </button>
             
             <button 
               onClick={clearCart}
-              className="w-full mt-4 bg-transparent border border-slate-600 hover:border-red-500 text-gray-400 hover:text-red-500 font-medium py-2 px-4 rounded-lg transition"
+              disabled={isCheckingOut}
+              className="w-full mt-4 bg-transparent border border-slate-600 hover:border-red-500 text-gray-400 hover:text-red-500 font-medium py-2 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ล้างตะกร้า
             </button>
