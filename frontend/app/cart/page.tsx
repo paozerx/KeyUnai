@@ -53,21 +53,20 @@ export default function CartPage() {
         body: JSON.stringify({ items: orderItems })
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        // เช็กเผื่อ Token หมดอายุ
         if (res.status === 401) {
           localStorage.removeItem('accessToken');
           alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
           router.push('/login');
           return;
         }
-        throw new Error('เกิดข้อผิดพลาดในการสั่งซื้อ');
+        throw new Error(data.detail || 'เกิดข้อผิดพลาดในการสั่งซื้อ');
       }
 
-      // ถ้าสำเร็จ
-      alert("🎉 สร้างคำสั่งซื้อสำเร็จเรียบร้อยแล้ว!");
-      clearCart(); // ล้างตะกร้า
-      router.push('/'); // กลับหน้าแรก (อนาคตค่อยพาไปหน้าประวัติการสั่งซื้อ)
+      clearCart();
+      router.push(`/orders/${data.order_id}/payment`);
 
     } catch (error: any) {
       alert(error.message);
