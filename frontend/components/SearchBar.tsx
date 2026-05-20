@@ -22,9 +22,13 @@ export default function SearchBar() {
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    setTerm(searchParams.get('search') || '');
+    const params = searchParams;
+    if (params) {
+      setTerm(params.get('search') || '');
+    }
   }, [searchParams]);
 
   const fetchSuggestions = useCallback(async (query: string) => {
@@ -35,10 +39,17 @@ export default function SearchBar() {
       return;
     }
 
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsLoading(true);
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/games/?search=${encodeURIComponent(trimmed)}`
+        `${process.env.NEXT_PUBLIC_API_URL}/games/?search=${encodeURIComponent(trimmed)}`,
+        { signal: controller.signal }
       );
       if (!res.ok) throw new Error('Failed to fetch');
       const data: GameSuggestion[] = await res.json();
@@ -46,7 +57,8 @@ export default function SearchBar() {
       setSuggestions(results);
       setIsOpen(true);
       setActiveIndex(-1);
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       setSuggestions([]);
       setIsOpen(false);
     } finally {
@@ -70,6 +82,7 @@ export default function SearchBar() {
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (abortRef.current) abortRef.current.abort();
     };
   }, [term, fetchSuggestions]);
 
@@ -101,7 +114,7 @@ export default function SearchBar() {
   const selectSuggestion = (game: GameSuggestion) => {
     setTerm(game.title);
     setIsOpen(false);
-    router.push(`/?search=${encodeURIComponent(game.title)}`);
+    router.push(`/games/${game.id}`);
   };
 
   const clearSearch = () => {

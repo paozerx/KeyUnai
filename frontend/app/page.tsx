@@ -1,14 +1,6 @@
 import GameCard from '@/components/GameCard';
 import { Gamepad2, Sparkles } from 'lucide-react';
-
-interface Game {
-  id: number;
-  title: string;
-  description: string;
-  price: string;
-  platform: string;
-  cover_image_url: string;
-}
+import type { Game } from '@/store/cartStore';
 
 async function getGames(query: string = '') {
   try {
@@ -25,8 +17,12 @@ async function getGames(query: string = '') {
   }
 }
 
-export default async function Home({ searchParams }: any) {
-  const params = await Promise.resolve(searchParams);
+interface PageProps {
+  searchParams: Promise<{ search?: string }>;
+}
+
+export default async function Home({ searchParams }: PageProps) {
+  const params = await searchParams;
   const search = params?.search || '';
   const games: Game[] = await getGames(search);
 

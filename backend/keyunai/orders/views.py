@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -53,29 +54,42 @@ class OrderDetailView(generics.RetrieveAPIView):
 class CreateOrderView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request):
         items = request.data.get('items', [])
 
-        if not items:
+        if not items or not isinstance(items, list):
             return Response({"detail": "ตะกร้าสินค้าว่างเปล่า"}, status=status.HTTP_400_BAD_REQUEST)
 
         order = Order.objects.create(user=request.user, total_price=0, status='PENDING')
         total = 0
 
         for item in items:
-            try:
-                game = Game.objects.get(id=item['game_id'], is_active=True)
-                qty = int(item.get('quantity', 1))
-                if qty < 1:
-                    continue
-                for _ in range(qty):
-                    OrderItem.objects.create(order=order, game=game, price=game.price)
-                    total += game.price
-            except Game.DoesNotExist:
+            game_id = item.get('game_id')
+            if not isinstance(game_id, int):
                 return Response(
-                    {"detail": f"ไม่พบเกม ID {item['game_id']}"},
+                    {"detail": f"game_id ต้องเป็นตัวเลข: {game_id}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
+            qty = item.get('quantity', 1)
+            if not isinstance(qty, int) or qty < 1:
+                return Response(
+                    {"detail": f"quantity ต้องเป็นจำนวนเต็มบวก: {qty}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                game = Game.objects.get(id=game_id, is_active=True)
+            except Game.DoesNotExist:
+                return Response(
+                    {"detail": f"ไม่พบเกม ID {game_id}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            for _ in range(qty):
+                OrderItem.objects.create(order=order, game=game, price=game.price)
+                total += game.price
 
         if total <= 0:
             return Response({"detail": "ไม่มีรายการสินค้าในคำสั่งซื้อ"}, status=status.HTTP_400_BAD_REQUEST)
